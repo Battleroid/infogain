@@ -1,6 +1,6 @@
 """
 Usage:
-    gain.py <file> (--all | --targets <targets>) (--parent <parent>) [-o <results>]
+    gain.py <file> (--all | --targets <targets>) (--parent <parent>) [-o <results> | --output <results>]
     gain.py -h | --help
 
 Options:
@@ -31,18 +31,32 @@ def entropy_of_q(df, target, against):
     return e
 
 def main(args):
+    # Read CSV into DataFrame, get Decision attribute
     df = pandas.read_csv(args['<file>'])
     parent = args['<parent>']
+    # Get target columns to compare against
     if args['--all']:
         targets = df._get_numeric_data().columns.difference([args['<parent>']]).tolist()
     elif args['--targets']:
         targets = args['<targets>'].split(',')
+    # Calculate Decision (parent) entropy
     parent_entropy = entropy(df[parent])
+    # For each target column calculate the gain
     gain = dict()
-    gain[parent] = parent_entropy
     for t in targets:
         e_t = entropy_of_q(df, t, parent)
         gain[t] = parent_entropy - e_t
+    # If output file specified, save results as CSV
+    if args['-o'] or args['--output']:
+        filename = args['<results>']
+        odf = pandas.DataFrame([gain.values()], columns=gain.keys())
+        odf.to_csv(filename, index=False)
+    else:
+        # Else just print to stdout
+        print 'Parent ({}):\t{}'.format(parent, parent_entropy)
+        print '\nGains:'
+        for n, v in sorted(gain.items()):
+            print n, '\t', v
 
 
 if __name__ == '__main__':
