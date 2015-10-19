@@ -36,6 +36,7 @@ def entropy(l):
     total = float(len(l))
     return -sum(count/total * math.log(count/total, 2) for count in p.values())
 
+
 def entropy_of_q(df, target, against):
     """
     Calculate entropy of target column against decision attribute.
@@ -58,6 +59,7 @@ def entropy_of_q(df, target, against):
         e += g_total/total * sum(r)
     return e
 
+
 def main(args):
     verbose = args['-v'] or args['--verbose']
     if verbose:
@@ -67,7 +69,8 @@ def main(args):
     parent = args['<parent>']
     # Get target columns to compare against
     if args['--all']:
-        targets = df._get_numeric_data().columns.difference([args['<parent>']]).tolist()
+        targets = df._get_numeric_data().columns.difference(
+                [args['<parent>']]).tolist()
     elif args['--targets']:
         targets = args['<targets>'].split(',')
     if args['--except']:
