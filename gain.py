@@ -7,7 +7,7 @@ Input should be a properly formatted CSV file. If using multiple target columns
 instead of --all flag be sure to use a comma delimited list (ex: age,income).
 
 Usage:
-    gain.py <file> (--all | --targets <targets>) (--parent <parent>) [-o <results> | --output <results>] [-v | --verbose]
+    gain.py <file> (--all | --targets <targets>) (--parent <parent>) [--except <except>] [-o <results> | --output <results>] [-v | --verbose]
     gain.py -h | --help
 
 Options:
@@ -19,6 +19,7 @@ from collections import Counter
 from docopt import docopt
 import math
 import pandas
+import sys
 
 
 def entropy(l):
@@ -69,6 +70,12 @@ def main(args):
         targets = df._get_numeric_data().columns.difference([args['<parent>']]).tolist()
     elif args['--targets']:
         targets = args['<targets>'].split(',')
+    if args['--except']:
+        ignore = args['<except>'].split(',')
+        targets = [x for x in targets if x not in ignore]
+    if not targets:
+        print 'No columns selected, exiting.'
+        sys.exit(1)
     # Calculate Decision (parent) entropy
     parent_entropy = entropy(df[parent])
     if verbose:
