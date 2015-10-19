@@ -1,6 +1,13 @@
 """
+Calculate the Gain of all (or a list) columns against a parent (decision)
+column. Unless a output file is specified the results will be printed to stdout
+in a basic table.
+
+Input should be a properly formatted CSV file. If using multiple target columns
+instead of --all flag be sure to use a comma delimited list (ex: age,income).
+
 Usage:
-    gain.py <file> (--all | --targets <targets>) (--parent <parent>) [-o <results> | --output <results>]
+    gain.py <file> (--all | --targets <targets>) (--parent <parent>) [-o <results> | --output <results>] [-v | --verbose]
     gain.py -h | --help
 
 Options:
@@ -15,11 +22,31 @@ import pandas
 
 
 def entropy(l):
+    """
+    Calculate entropy of parent attribute.
+
+    Args:
+        l (List): List of integers or floats
+
+    Returns:
+        float
+    """
     p = Counter(l)
     total = float(len(l))
     return -sum(count/total * math.log(count/total, 2) for count in p.values())
 
 def entropy_of_q(df, target, against):
+    """
+    Calculate entropy of target column against decision attribute.
+
+    Args:
+        df (py:class:`pandas.DataFrame`): DataFrame of original data
+        target (str): Column to calculate entropy for
+        against (str): Decision attribute column
+
+    Returns:
+        float: Entropy of the given column given the decision attribute
+    """
     total = df.count().values[0]
     grouped = df.groupby([target])
     e = 0.0
@@ -31,6 +58,9 @@ def entropy_of_q(df, target, against):
     return e
 
 def main(args):
+    verbose = args['-v'] or args['--verbose']
+    if verbose:
+        print 'Verbose on'
     # Read CSV into DataFrame, get Decision attribute
     df = pandas.read_csv(args['<file>'])
     parent = args['<parent>']
@@ -41,11 +71,17 @@ def main(args):
         targets = args['<targets>'].split(',')
     # Calculate Decision (parent) entropy
     parent_entropy = entropy(df[parent])
+    if verbose:
+        print 'Parent is', parent
+        print 'Parent entropy is', parent_entropy
+        print 'Target columns:', targets
     # For each target column calculate the gain
     gain = dict()
     for t in targets:
         e_t = entropy_of_q(df, t, parent)
         gain[t] = parent_entropy - e_t
+        if verbose and (args['-o'] or args['--output']):
+            print t, 'e:', e_t
     # If output file specified, save results as CSV
     if args['-o'] or args['--output']:
         filename = args['<results>']
@@ -53,8 +89,10 @@ def main(args):
         odf.to_csv(filename, index=False)
     else:
         # Else just print to stdout
+        if verbose:
+            print ''
         print 'Parent ({}):\t{}'.format(parent, parent_entropy)
-        print '\nGains:'
+        print 'Gains:'
         for n, v in sorted(gain.items()):
             print n, '\t', v
 
